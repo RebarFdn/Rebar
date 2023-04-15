@@ -1,25 +1,74 @@
-#tasks.py
+# Rebar Platform Utilities 
+#Date Nov 26 2022
 
-import requests
-import orjson as json
-from starlette.responses import PlainTextResponse, JSONResponse
-'''try:
-    from utils.utilities import GenerateId, timestamp
-except ImportError:
-    from sledge.utils.utilities import GenerateId, timestamp
-'''
 import datetime
 from strgen import StringGenerator
 
 
 # Timestamp 
 def timestamp():
-        return  int((datetime.datetime.now().timestamp() * 1000))
+    '''
+    Timestamp returns an integer representation of the current time.
+    >>> timestamp()
+    1673633512000
+    '''
+    return  int((datetime.datetime.now().timestamp() * 1000))
 
-
+def converTime(time):    
+    timestamp = datetime.datetime.fromtimestamp(int(time))
+    return timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    
 #----------------------------- ID Generation Service ----------------------------------
 
 class GenerateId:
+    '''Generate Unique Human readable Id tags.
+    ---
+    properties: 
+            name: 
+                tags
+            value: 
+                dict
+            name: 
+                genid
+            value: 
+                coroutine function
+            name: 
+                nameid
+            value: 
+                coroutine function
+            name: 
+                short_nameid
+            value: 
+                coroutine function
+            name: 
+                eventid
+            value: 
+                coroutine function
+            name: 
+                short_eventid
+            value: 
+                coroutine function
+            name: 
+                gen_id
+            value: 
+                function
+            name: 
+                name_id
+            value: 
+                function
+            name: 
+                short_name_id
+            value: 
+                function
+            name: 
+                event_id
+            value: 
+                function
+            name: 
+                short_event_id
+            value: 
+                function
+    '''
     tags = dict(
             doc='[h-z5-9]{8:16}',
             app='[a-z0-9]{16:32}',
@@ -32,6 +81,15 @@ class GenerateId:
         
     async def genid(self, doc_tag:str=None):
         """ 
+        Generates a unique id by a required key input.
+        :param doc_tag: str
+        :return: str
+        >>> await genid('user')
+        U474390
+        >>> await genid('doc')
+        ag77vx6n4m
+
+        ---
             Doc Tags: String( doc, app, key, job, user, item, code,task,name)
             UseCase: 
                         >>> import genny
@@ -39,12 +97,12 @@ class GenerateId:
                         >>> from genny import genid as gi
                         
                         >>> id = genny.genid('user')
+                        U474390
                         >>> id = genid('user')
+                        U77301642
                         >>> id = gi('user')
-                Yeilds ... U474390
-                        ... U77301642
-                        ... U1593055
-        
+                        U1593055
+                
         """
         
         if doc_tag == 'user':
@@ -54,32 +112,31 @@ class GenerateId:
             
 
     async def nameid(self, fn:str='Jane',ln:str='Dear',sec:int=5):
-        """ 
-            Name Identification by initials fn='Jane', ln='Dear' and given number sequence sec=5.
-            
+        """
+        Name Identification by initials fn='Jane', ln='Dear' and given number sequence sec=5.
+        ---    
             UseCase: 
                         >>> import genny
                         >>> from genny import nameid
                         >>> from genny import nameid as nid
                         
-                        >>> id = genny.nameid('Peter','Built',6)
-                        >>> id = nameid('Peter','Built',5)
-                        >>> id = nid('Peter','Built',4)
-                        >>> id = nid() # default false id 
-                        
-                Yeilds ... PB474390
-                        ... PB77301
-                        ... PB1593
-                        ... JD1951
-        
+                        >>> id = await genny.nameid('Peter','Built',6)
+                        PB474390
+                        >>> id = await nameid('Peter','Built',5)
+                        PB77301
+                        >>> id = await nid('Peter','Built',4)
+                        PB1593
+                        >>> id = await nid() # default false id 
+                        JD1951                        
+                
         """
         code = '[0-9]{4:%s}'% int(sec)
         return f"{fn[0].capitalize()}{ln[0].capitalize()}{StringGenerator(str(code)).render(unique=True)}"
                
 
     async def short_nameid(self, fn:str='Jane',ln:str='Dear',sec:int=2):
-        """ 
-            Name Identification by initials fn='Jane', ln='Dear' and given number sequence sec=5.
+        """
+        Name Identification by initials fn='Jane', ln='Dear' and given number sequence sec=5.
             
             UseCase: 
                         >>> import genny
@@ -255,143 +312,55 @@ class GenerateId:
         code = '[0-9]{2:%s}'% int(sec)
         return f"{event[:3].upper()}{event_code}-{StringGenerator(str(code)).render(unique=True)}"
         
-        
-try:
-    from models.database import Connection
-except ImportError:
-    from .database import Connection
-
-class Task(
-    Connection,
-    
-):
-    _id:str = None    
-    meta_data:dict = {"created":"today", "database": "cp-tasks"}
-    index:set = set()
-    task:dict = {}
-    tasks:list = []
-    
-    def __init__(self, data:dict=None) -> None:
-        if data:
-            self.data = data
-            if self.data.get("_id"):
-                pass
-            else:
-                self.generate_id()
-
-
-    def mount(self, data:dict=None) -> None:        
-        if data:
-            self.data = data
-            if self.data.get("_id"):
-                pass
-            else:
-                self.generate_id()
-
-
-    async def all(self):
-        r = requests.get(f"{self.db_con}_all_docs") 
-        return r.json() 
-
-    async def all_tasks(self):        
-        def processTasks(task):
-            return task['value']
-            
+class Security:
+    def safe_file_storage(self, item:str, item_1:str):
+        import werkzeug
+        from werkzeug.datastructures import FileStorage        
         try:
-            r = requests.get(f"{self.db_con}_design/index/_view/document").json()
-            return list(map(processTasks,  r.get('rows') ))
-        except Exception as e:
-            return str(e)
-        finally: del(r)
-             
+            file = FileStorage(
+                stream=None, 
+                filename=None, 
+                name=None, 
+                content_type=None, 
+                content_length=None, 
+                headers=None
+                )
+            return dir(werkzeug.datastructures) #safe_str_cmp(item, item_1)
+        except Exception as ex:
+            return str(ex)
+        finally: print()# del(safe_str_cmp)
 
+# test
+def test_secure_safe_compare(s1, s2):
+    s = Security()
+    print(s.safe_file_storage(s1, s2))
 
+#test_secure_safe_compare('buff', 'buff')
 
-    async def get(self, id:str=None):
-        r = requests.get(f"{self.db_con}{id}") 
-        return r.json()  
+def test_delete():
+    '''Theory that deletions should be done in an order 
+        that safely unlock resources 
+    '''
+    r = 1       # stand alone has 0 dependent
+    r2 = r * 2  # has 1 dependent
+    r3 = r + r2 # has 2 dependents
+    r4 = r + r3 # has 3 dependent
+    rs = dict( 
+        r = r, 
+        r2 = r2,
+        r3 = r3,
+        r4 = r4, 
 
+    )
+    try: print(rs) 
+    except: print(r)
+    finally: 
+        print("Done")
+        del(r3)
+        del(r) 
+        del(r4) 
+        del(r2) 
+        del(rs)
 
-    async def save(self):        
-        response = requests.post(f"{self.db_con}", json=self.data).json()
-        print(response)
-        return self.data
-
-    async def update(self, data:dict=None):
-        task = requests.get(f"{self.db_con}{data.get('_id')}").json()
-        payload = task | data
-        try:
-            return requests.put(f"{self.db_con}{data.get('_id')}", json=payload)
-        except Exception as e:
-            print(e)
-        finally:
-            del(data) ; del(task); del(payload)
-
-
-    async def delete(self, data:dict=None):
-        task = requests.get(f"{self.db_con}{data.get('_id')}").json()
-        try:
-            return requests.delete(f"{self.db_con}{data.get('_id')}?rev={task['_rev']}")
-        except Exception as e:
-            print(e)
-        finally:
-            del(task); del(data)
-
-    async def get_elist(self):
-        await self.all()
-        return self.tasks
-
-    def generate_id(self):
-        ''' Generates a unique task id, also updates the task data''' 
-        gen = GenerateId()
-        try:
-            ln = self.data.get('title').split(' ')
-            self._id =  gen.name_id(ln=ln[1], fn=self.data.get('title'))
-            
-        except:
-            self._id = gen.name_id('P', 'T')
-        finally:
-            self.data['_id']=self._id
-            return self._id
-
-    @property
-    def db_con(self):
-        return self.conn(db=self.meta_data.get('database'))
-
-
-    def update_index(self, data:str) -> None:
-        '''  Expects a unique id string ex. JD33766'''        
-        self.index.add(data) 
-
-
-    @property 
-    def list_index(self) -> list:
-        ''' Converts set index to readable list'''
-        return [item for item in self.index]
-
-
-
-async def getTasks( request ):
-    try:
-        t = Task()
-        tasks = await t.all_tasks()
-        return JSONResponse(tasks)
-    except Exception as e:
-        return JSONResponse({"error": str(e)})
-    finally: del(t); del(tasks)
-
-
-async def saveTask( request ):
-    try:
-        payload = await request.json()
-        t = Task(data=payload)        
-        response = await t.save()       
-        return JSONResponse(response )
-    except Exception as e:
-        return JSONResponse({"error": str(e)})
-    finally: del(t); 
-
-
-
-
+test_delete()
 
